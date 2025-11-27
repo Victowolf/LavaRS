@@ -1,18 +1,15 @@
-# requirements.txt (fixed)
-torch==2.4.0
-transformers>=4.35.0
-accelerate>=0.20.3
-bitsandbytes>=0.40.0
+torch
+transformers>=4.36.0
+accelerate
 sentencepiece
 protobuf
 google
 google-crc32c
 grpcio
 safetensors
+pillow
 huggingface-hub
-tokenizers
 uvicorn
 fastapi
 pydantic
 numpy
-typing-extensions
