@@ -1,15 +1,15 @@
 import torch
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from PIL import Image
 from transformers import LlavaProcessor, LlavaForConditionalGeneration
 
-MODEL_NAME = "HuggingFaceM4/llava-v1.5-7b-hf"
+MODEL_NAME = "liuhaotian/llava-v1.5-7b"
 
 app = FastAPI(title="RS-LLaVA Server")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-print("=== Loading RS-LLaVA 7B ===")
+print("=== Loading RS-LLaVA 7B (public model) ===")
 
 processor = LlavaProcessor.from_pretrained(MODEL_NAME)
 model = LlavaForConditionalGeneration.from_pretrained(
@@ -18,14 +18,11 @@ model = LlavaForConditionalGeneration.from_pretrained(
     low_cpu_mem_usage=True,
 ).to(device)
 
-print("=== Model loaded ===")
+print("=== Model loaded successfully ===")
 
 @app.post("/generate")
-async def generate(prompt: str = Form(...), image: UploadFile = File(None)):
-    if image:
-        img = Image.open(image.file).convert("RGB")
-    else:
-        return JSONResponse({"error": "Image required"}, status_code=400)
+async def generate(prompt: str = Form(...), image: UploadFile = File(...)):
+    img = Image.open(image.file).convert("RGB")
 
     inputs = processor(prompt, img, return_tensors="pt").to(device, torch.float16)
 

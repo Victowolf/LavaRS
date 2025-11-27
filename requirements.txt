@@ -11,5 +11,4 @@ pillow
 huggingface-hub
 uvicorn
 fastapi
-pydantic
 numpy
