@@ -1,10 +1,9 @@
 torch
-transformers>=4.38.0
+transformers>=4.36.2
 accelerate
+sentencepiece
 protobuf
 google
-sentencepiece
-safetensors
 pillow
 fastapi
 uvicorn
