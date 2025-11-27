@@ -17,11 +17,16 @@ LORA_ADAPTER = "BigData-KSU/RS-llava-v1.5-7b-LoRA"
 
 print("=== Loading RS-LLaVA 7B ===")
 
-tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+# FIX: Disable fast tokenizer (LLaVA incompatible with fast version)
+tokenizer = AutoTokenizer.from_pretrained(
+    BASE_MODEL,
+    trust_remote_code=True,
+    use_fast=False
+)
 
 processor = AutoProcessor.from_pretrained(
     BASE_MODEL,
-    trust_remote_code=True
+    trust_remote_code=True,
 )
 
 model = AutoModelForCausalLM.from_pretrained(
@@ -31,34 +36,35 @@ model = AutoModelForCausalLM.from_pretrained(
     trust_remote_code=True,
 )
 
+# load LoRA
 model = PeftModel.from_pretrained(model, LORA_ADAPTER)
 model = model.merge_and_unload()
 model.eval()
 
-print("✔ Model Ready!")
+print("✔ RS-LLaVA Model Ready!")
 
 
 @app.post("/generate")
 async def generate(prompt: str = Form(...), image: UploadFile = File(None)):
+
+    pil_img = None
     if image:
-        img = Image.open(BytesIO(await image.read())).convert("RGB")
-    else:
-        img = None
+        pil_img = Image.open(BytesIO(await image.read())).convert("RGB")
 
     inputs = processor(
         text=prompt,
-        images=img,
+        images=pil_img,
         return_tensors="pt"
     ).to(model.device)
 
     with torch.no_grad():
         output = model.generate(
             **inputs,
-            max_new_tokens=256
+            max_new_tokens=256,
         )
 
-    text = tokenizer.decode(output[0], skip_special_tokens=True)
-    return JSONResponse({"response": text})
+    result = tokenizer.decode(output[0], skip_special_tokens=True)
+    return {"response": result}
 
 
 @app.get("/")
