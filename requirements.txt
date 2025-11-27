@@ -1,11 +1,9 @@
 torch
-transformers>=4.36.2
+torchvision --index-url https://download.pytorch.org/whl/cu121
+transformers>=4.40.0
 accelerate
-sentencepiece
-protobuf
-google
 pillow
 fastapi
 uvicorn
-numpy
-huggingface-hub
+sentencepiece
+protobuf
