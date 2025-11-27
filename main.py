@@ -2,26 +2,36 @@ import torch
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from PIL import Image
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor
+from transformers import AutoProcessor, AutoModelForCausalLM
 
 MODEL = "microsoft/phi-3.5-vision-instruct"
 
-app = FastAPI()
-
+print("=== Starting RS-LLaVA FastAPI server ===")
 print("=== Loading Phi-3.5 Vision Instruct ===")
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-processor = AutoProcessor.from_pretrained(MODEL)
+# IMPORTANT: trust_remote_code=True
+processor = AutoProcessor.from_pretrained(
+    MODEL,
+    trust_remote_code=True
+)
+
 model = AutoModelForCausalLM.from_pretrained(
     MODEL,
+    trust_remote_code=True,
     torch_dtype=torch.float16,
     device_map="auto"
 )
 
-print("=== Model Loaded ===")
+app = FastAPI()
+
 
 @app.post("/generate")
-async def generate(prompt: str = Form(...), image: UploadFile = File(...)):
+async def generate(
+    prompt: str = Form(...),
+    image: UploadFile = File(...)
+):
     img = Image.open(image.file).convert("RGB")
 
     inputs = processor(
@@ -36,5 +46,5 @@ async def generate(prompt: str = Form(...), image: UploadFile = File(...)):
         temperature=0.2
     )
 
-    response = processor.decode(output[0], skip_special_tokens=True)
-    return JSONResponse({"response": response})
+    result = processor.decode(output[0], skip_special_tokens=True)
+    return JSONResponse({"response": result})
