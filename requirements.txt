@@ -1,15 +1,7 @@
-# requirements.txt
-torch>=2.2.0
-transformers>=4.50.0
-accelerate>=0.21.0
-peft>=0.5.0
-safetensors
-huggingface-hub
-sentencepiece
-tokenizers
+torch
+transformers==4.38.1
+accelerate
+peft
+pillow
 fastapi
-uvicorn[standard]
-pydantic
-Pillow
-torchvision
-bitsandbytes     
+uvicorn
