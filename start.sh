@@ -1,29 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== start.sh: create venv and install requirements (if not done) ==="
+echo "=== start.sh: create venv and install requirements ==="
 
-# create venv if not present
+# ---------------------------
+# Create venv even if ensurepip is missing
+# ---------------------------
 if [ ! -d "venv" ]; then
-  python -m venv venv
+  echo "[1] Creating venv (without ensurepip)..."
+  python3 -m venv venv --without-pip
+
+  echo "[2] Installing pip manually inside venv..."
+  curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+  ./venv/bin/python get-pip.py
+  rm get-pip.py
 fi
 
-# activate
+# ---------------------------
+# Activate the venv
+# ---------------------------
+echo "[3] Activating venv..."
 source venv/bin/activate
 
-# pip upgrade
+# ---------------------------
+# Upgrade pip + install requirements
+# ---------------------------
+echo "[4] Upgrading pip..."
 pip install --upgrade pip
 
-echo "Installing python requirements (may take a while)..."
+echo "[5] Installing python requirements..."
 pip install -r requirements.txt
 
-# optional: pre-warm HF cache or pre-download models if you want to avoid download at runtime
-# Uncomment to pre-download:
-# python - <<PY
-# from transformers import AutoTokenizer, AutoModelForCausalLM
-# AutoTokenizer.from_pretrained("llava/llava-1.5-7b-hf", trust_remote_code=True)
-# AutoModelForCausalLM.from_pretrained("llava/llava-1.5-7b-hf", trust_remote_code=True)
-# PY
-
-echo "Starting uvicorn..."
+# ---------------------------
+# START SERVER
+# ---------------------------
+echo "=== Starting RS-LLaVA FastAPI server ==="
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1
