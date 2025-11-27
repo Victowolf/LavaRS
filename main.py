@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForCausalLM, AutoConfig
 
-# Force-disable FlashAttention globally
+# Disable FlashAttention
 os.environ["FLASH_ATTENTION"] = "0"
 os.environ["DISABLE_FLASH_ATTENTION"] = "1"
 os.environ["FLASHATTENTION_DISABLED"] = "1"
@@ -18,63 +18,82 @@ print("=== Loading Phi-3.5 Vision Instruct ===")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load config first and override attn settings
+# Load config (force eager attention)
 config = AutoConfig.from_pretrained(
     MODEL,
     trust_remote_code=True
 )
-
-# IMPORTANT — hard-disable flash-attn at the config level
+config._attn_implementation = "eager"
 config.attn_implementation = "eager"
-config._attn_implementation_internal = "eager"
-config.use_flash_attention = False
-config.flash_attn = False
-config.enable_flash_attention = False
+
+# Load model
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL,
+    trust_remote_code=True,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    config=config,
+)
 
 # Load processor
 processor = AutoProcessor.from_pretrained(
     MODEL,
-    trust_remote_code=True
-)
-
-# Load model with patched config
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL,
-    config=config,              # 👈 Force our patched config
     trust_remote_code=True,
-    torch_dtype=torch.float16,
-    device_map="auto",
+    num_crops=16,   # recommended for single image
 )
 
 app = FastAPI()
+
 
 @app.post("/generate")
 async def generate(
     prompt: str = Form(...),
     image: UploadFile = File(...)
 ):
+    # Load image
     img = Image.open(image.file).convert("RGB")
 
-    # Phi-3.5 requires <image_0> tag for the first image
-    if "<image_0>" not in prompt:
-        prompt = "<image_0>\n" + prompt
+    # Build messages according to official format
+    messages = [
+        {
+            "role": "user",
+            "content": f"<|image_1|>\n{prompt}"
+        }
+    ]
 
-    # Run processor
+    # Convert to model-ready text
+    prompt_text = processor.tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+
+    # Processor expects a list of images
     inputs = processor(
-        text=prompt,
-        images=[img],     # IMPORTANT: list of images
+        prompt_text,
+        [img],
         return_tensors="pt"
     ).to(device)
 
+    # Generate
     output = model.generate(
         **inputs,
-        max_new_tokens=300,
-        temperature=0.2
+        max_new_tokens=500,
+        temperature=0.0,
+        do_sample=False,
+        eos_token_id=processor.tokenizer.eos_token_id
     )
 
-    result = processor.decode(output[0], skip_special_tokens=True)
-    return JSONResponse({"response": result})
+    # Remove prompt tokens
+    output_ids = output[:, inputs["input_ids"].shape[1]:]
 
+    result = processor.batch_decode(
+        output_ids,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False
+    )[0]
+
+    return JSONResponse({"response": result})
 
 
 @app.get("/")
