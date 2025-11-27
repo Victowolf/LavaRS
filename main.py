@@ -81,6 +81,7 @@ async def generate(
         max_new_tokens=500,
         temperature=0.0,
         do_sample=False,
+        use_cache=False,
         eos_token_id=processor.tokenizer.eos_token_id
     )
 
