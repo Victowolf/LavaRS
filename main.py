@@ -48,7 +48,6 @@ model = AutoModelForCausalLM.from_pretrained(
 
 app = FastAPI()
 
-
 @app.post("/generate")
 async def generate(
     prompt: str = Form(...),
@@ -56,14 +55,14 @@ async def generate(
 ):
     img = Image.open(image.file).convert("RGB")
 
-    # Phi-3.5 requires <image> tag for each image
-    if "<image>" not in prompt:
-        prompt = "<image>\n" + prompt
+    # Phi-3.5 requires <image_0> tag for the first image
+    if "<image_0>" not in prompt:
+        prompt = "<image_0>\n" + prompt
 
     # Run processor
     inputs = processor(
         text=prompt,
-        images=img,
+        images=[img],     # IMPORTANT: list of images
         return_tensors="pt"
     ).to(device)
 
@@ -73,9 +72,9 @@ async def generate(
         temperature=0.2
     )
 
-    # Decode
     result = processor.decode(output[0], skip_special_tokens=True)
     return JSONResponse({"response": result})
+
 
 
 @app.get("/")
