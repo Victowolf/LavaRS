@@ -56,6 +56,11 @@ async def generate(
 ):
     img = Image.open(image.file).convert("RGB")
 
+    # Phi-3.5 requires <image> tag for each image
+    if "<image>" not in prompt:
+        prompt = "<image>\n" + prompt
+
+    # Run processor
     inputs = processor(
         text=prompt,
         images=img,
@@ -68,6 +73,7 @@ async def generate(
         temperature=0.2
     )
 
+    # Decode
     result = processor.decode(output[0], skip_special_tokens=True)
     return JSONResponse({"response": result})
 
