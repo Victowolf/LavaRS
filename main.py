@@ -1,8 +1,13 @@
+import os
 import torch
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForCausalLM
+
+os.environ["FLASH_ATTENTION"] = "0"
+os.environ["DISABLE_FLASH_ATTENTION"] = "1"
+os.environ["FLASHATTENTION_DISABLED"] = "1"
 
 MODEL = "microsoft/phi-3.5-vision-instruct"
 
@@ -21,7 +26,8 @@ model = AutoModelForCausalLM.from_pretrained(
     MODEL,
     trust_remote_code=True,
     torch_dtype=torch.float16,
-    device_map="auto"
+    device_map="auto",
+    attn_implementation="eager"  # 👈 Disable FlashAttention2
 )
 
 app = FastAPI()
