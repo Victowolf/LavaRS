@@ -41,7 +41,7 @@ model = AutoModelForCausalLM.from_pretrained(
 processor = AutoProcessor.from_pretrained(
     MODEL,
     trust_remote_code=True,
-    num_crops=16,   # recommended for single image
+    num_crops=1,   # recommended for single image
 )
 
 app = FastAPI()
@@ -93,7 +93,7 @@ async def generate(
         max_new_tokens=500,
         temperature=0.0,
         do_sample=False,
-        use_cache=False,
+        use_cache=True,
         eos_token_id=processor.tokenizer.eos_token_id
     )
 
