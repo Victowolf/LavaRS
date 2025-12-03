@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lava-rs-service
+spec:
+  type: NodePort
+  selector:
+    job-name: lava-rs-server     # IMPORTANT: match your Job name!
+  ports:
+    - name: http
+      port: 8000                # container port
+      targetPort: 8000
+      nodePort: 30124           # external port you want

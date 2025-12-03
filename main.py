@@ -4,6 +4,8 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForCausalLM, AutoConfig
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Disable FlashAttention
 os.environ["FLASH_ATTENTION"] = "0"
@@ -44,6 +46,16 @@ processor = AutoProcessor.from_pretrained(
 
 app = FastAPI()
 
+# -------------------------
+# ✅ Enable CORS
+# -------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # Change to specific domains for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/generate")
 async def generate(
