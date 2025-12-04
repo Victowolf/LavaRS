@@ -57,7 +57,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/generate")
+@app.post("/send_toclip")
 async def generate(
     prompt: str = Form(...),
     image: UploadFile = File(...)
