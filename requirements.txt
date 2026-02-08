@@ -1,6 +1,6 @@
 torch
 torchvision --index-url https://download.pytorch.org/whl/cu121
-transformers>=4.40.0
+transformers==4.42.4
 accelerate
 pillow
 fastapi
