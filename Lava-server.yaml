@@ -35,4 +35,4 @@ spec:
               echo "=== RS-LLaVA Server Exited ==="
           resources:
             limits:
-              nvidia.com/mig-3g.71gb: 1
+              nvidia.com/mig-2g.35gb: 1
